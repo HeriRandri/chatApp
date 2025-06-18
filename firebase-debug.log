@@ -1,0 +1,22 @@
+[debug] [2025-06-16T11:43:57.037Z] ----------------------------------------------------------------------
+[debug] [2025-06-16T11:43:57.043Z] Command:       /usr/bin/node-22 /usr/local/bin/firebase login
+[debug] [2025-06-16T11:43:57.044Z] CLI Version:   14.7.0
+[debug] [2025-06-16T11:43:57.044Z] Platform:      linux
+[debug] [2025-06-16T11:43:57.044Z] Node Version:  v22.16.0
+[debug] [2025-06-16T11:43:57.045Z] Time:          Mon Jun 16 2025 04:43:57 GMT-0700 (heure d’été du Pacifique nord-américain)
+[debug] [2025-06-16T11:43:57.045Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-06-16T11:43:57.049Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  Firebase CLI integrates with Gemini in Firebase API to provide assistant features. Learn more about using Gemini in Firebase and how we train our models: https://firebase.google.com/docs/gemini-in-firebase/set-up-gemini#required-permissions 
+[debug] [2025-06-16T11:44:02.125Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): FetchError: request to https://firebase-public.firebaseio.com/cli.json failed, reason: getaddrinfo ENOTFOUND firebase-public.firebaseio.com
+[warn] ⚠  Unable to fetch the CLI MOTD and remote config. This is not a fatal error, but may indicate an issue with your network connection. 
+[debug] [2025-06-16T11:44:02.126Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[info] 
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[info] 
+[info] i  To change your the preference at any time, run `firebase logout` and `firebase login` again. 
+[info] 
+[info] Visit this URL on this device to log in:
+[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=883720877&redirect_uri=http%3A%2F%2Flocalhost%3A9005
+[info] 
+[info] Waiting for authentication...
