@@ -14,7 +14,7 @@ export default function ProfilePage() {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        router.push("/login");
+        router.push("/auth");
       }
     });
     return () => unsubscribe();

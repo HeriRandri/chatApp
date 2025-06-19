@@ -1,15 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
 import { db } from "../app/firebase/clientApp";
-import {
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-  where,
-} from "firebase/firestore";
-import Image from "next/image";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+
+// ✅ Fonction pour éviter les doublons
+type FriendEntry = { uid: string; status: string };
+
+function removeDuplicates(arr: FriendEntry[]) {
+  const seen = new Set();
+  return arr.filter((item) => {
+    if (seen.has(item.uid)) return false;
+    seen.add(item.uid);
+    return true;
+  });
+}
 
 type Friend = {
   uid: string;
@@ -36,8 +40,8 @@ export default function FriendList({
 
         type FriendEntry = { uid: string; status: string };
 
-        const accepted = data.list.filter(
-          (entry: FriendEntry) => entry.status === "accepted"
+        const accepted = removeDuplicates(
+          data.list.filter((entry: FriendEntry) => entry.status === "accepted")
         );
 
         const friendsData = await Promise.all(
@@ -84,7 +88,7 @@ export default function FriendList({
           </div>
         ))
       ) : (
-        <p className="text-gray-500">Vous n'avez pas encore d'amis.</p>
+        <p className="text-gray-500">Vous n avez pas encore d amis.</p>
       )}
     </div>
   );
