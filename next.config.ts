@@ -8,10 +8,15 @@ const nextConfig: import("next").NextConfig = {
       "avatars.githubusercontent.com",
     ],
   },
-};
-module.exports = {
-  // Output standalone pour l'optimisation
-  output: "standalone",
+  // Choisissez l'une des deux options ci-dessous selon votre cible de déploiement :
+  // output: 'standalone', // Pour Docker/Cloud Run
+  output: "export", // Pour Firebase Hosting (statique)
 };
 
+// next.config.js
+module.exports = {
+  experimental: {
+    fontLoaders: [{ loader: "@next/font/google", options: { timeout: 30000 } }],
+  },
+};
 module.exports = nextConfig;
