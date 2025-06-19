@@ -1,4 +1,4 @@
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 import {
   doc,
   deleteDoc,

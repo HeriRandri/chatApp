@@ -2,7 +2,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../app/firebase/clientApp"; // Utilisez le chemin absolu
+import { db } from "@/app/firebase/clientApp"; // Utilisez le chemin absolu
 
 interface User {
   uid: string;

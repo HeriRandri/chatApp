@@ -12,7 +12,7 @@ import {
   Timestamp,
   deleteDoc,
 } from "firebase/firestore";
-import { db, auth } from "../app/firebase/clientApp";
+import { db, auth } from "@/app/firebase/clientApp";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";

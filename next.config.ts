@@ -19,4 +19,26 @@ module.exports = {
     fontLoaders: [{ loader: "@next/font/google", options: { timeout: 30000 } }],
   },
 };
+import path from "path";
+
+interface WebpackConfig {
+  resolve: {
+    alias: Record<string, string>;
+  };
+}
+
+interface ModuleExports {
+  webpack: (config: WebpackConfig) => WebpackConfig;
+}
+
+const moduleExports: ModuleExports = {
+  webpack: (config: WebpackConfig): WebpackConfig => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@": path.resolve(__dirname),
+    };
+    return config;
+  },
+};
+module.exports = moduleExports;
 module.exports = nextConfig;

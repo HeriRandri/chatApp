@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "../app/firebase/clientApp";
+import { db, auth } from "@/app/firebase/clientApp";
 import { useRouter } from "next/navigation";
 
 export default function CreateGroup() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [members, setMembers] = useState<string[]>([]);
+  const [members] = useState<string[]>([]);
   const router = useRouter();
 
   const createGroup = async () => {

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 // ✅ Fonction pour éviter les doublons

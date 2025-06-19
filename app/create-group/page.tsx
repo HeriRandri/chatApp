@@ -1,6 +1,6 @@
 "use client";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../firebase/clientApp";
+import { auth } from "@/app/firebase/clientApp";
 import LoadingSpinner from "@/components/loadingSpinner";
 import CreateGroupForm from "@/components/createForm";
 

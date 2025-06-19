@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { db, auth } from "../app/firebase/clientApp";
+import { db, auth } from "@/app/firebase/clientApp";
 import {
   collection,
   query,

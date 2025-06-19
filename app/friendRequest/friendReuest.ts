@@ -8,7 +8,7 @@ import {
   updateDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 
 interface FriendRequest {
   from: string;

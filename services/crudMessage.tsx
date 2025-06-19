@@ -1,5 +1,5 @@
 import { doc as firestoreDoc, deleteDoc, Firestore } from "@firebase/firestore";
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 
 function doc(db: Firestore, collectionName: string, docId: string) {
   return firestoreDoc(db, collectionName, docId);

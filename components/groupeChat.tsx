@@ -13,7 +13,7 @@ import {
   onSnapshot,
   Timestamp,
 } from "firebase/firestore";
-import { db, auth } from "../app/firebase/clientApp";
+import { db, auth } from "@/app/firebase/clientApp";
 
 type Message = {
   id: string;

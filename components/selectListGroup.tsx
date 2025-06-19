@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 
 export default function UserSelector({
   currentUserId,

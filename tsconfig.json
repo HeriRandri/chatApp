@@ -18,8 +18,10 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".", // Ajoutez cette ligne
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"], // Syntaxe recommandée
+      "@/app/*": ["app/*"] // Votre alias spécifique
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

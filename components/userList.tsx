@@ -9,7 +9,7 @@ import {
   DocumentData,
   addDoc as firebaseAddDoc,
 } from "firebase/firestore";
-import { db } from "../app/firebase/clientApp";
+import { db } from "@/app/firebase/clientApp";
 
 type User = {
   id: string;

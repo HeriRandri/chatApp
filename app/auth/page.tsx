@@ -2,7 +2,7 @@
 import {
   auth,
   registerUser, // ta fonction perso
-} from "../firebase/clientApp";
+} from "@/app/firebase/clientApp";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 

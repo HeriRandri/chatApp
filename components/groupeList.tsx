@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { db, auth } from "../app/firebase/clientApp";
+import { db, auth } from "@/app/firebase/clientApp";
 import Link from "next/link";
 import { deleteDocument, updateDocument } from "@/services/crudServices";
 import { FiTrash, FiEdit2 } from "react-icons/fi";
