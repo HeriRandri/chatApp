@@ -1,0 +1,15 @@
+// firebase/serverApp.ts
+import { cert, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+
+const adminApp = initializeApp({
+  credential: cert({
+    projectId: "chattapp-475bc",
+    clientEmail:
+      "firebase-adminsdk-fbsvc@chattapp-475bc.iam.gserviceaccount.com",
+    privateKey:
+      "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCxhExebR7f20JT\nZVpNbiFUA7BVVxwrfJjzPpSeO84xuRDKDdhHWhe4IrvkrVcUaR96vZT/Ohm03wq+\ndm9f/kCrFDRfULIq+0Iq49EqaoPiecN8j5EauDbywSoFpQKx3bnooYZZgy24pDAK\nXxsmUZZwig5qNT/7oBK0mhs1+hipTqQLO0CcnFF4/3Akf1n355TVEv9lZtKIWTbq\nvsRLG+eTNJlu6OXSAVQAVJ446uDHpQ685Jro/tEH3IKJ79JIsdUHhLZPhkAlln7E\nwP0yrK22K62AA2XxpxkbyknR1FotUcFKxxCrP0O9PUVHtn98xXA9goWEskFBvlcW\n4mQ/TyXTAgMBAAECggEAAOnjsMwfIOmxFikH7b7jPd0ZcsAc5SofYRRMVSygT/y0\n+yU96ddpET1SHeDk1YHrPLrcIqC/2VCKBh9QOgjSdXr+oqfEeYVh+/sxf5JbKGxv\nmfYvMw5s2CrPp33pdfNSlwO3WykknQXyRngfCM0ezgKdZU19Ak8ekXDJpnDxKBbF\naSYCK4cpCo0ZORHZxQxCz9IDAThZWV7923oZuxk/cWMzJ5CXlvt6eMTYWGFJvO0P\ntc7xvQAKQ4A0L5OaZ07CKobaj3Cr/tH2dYSrQbjUCdlUXtsAQKjjcDqHr3aKapiK\n3+sKMuR9+JsruHBgBS4avxiaGhvzTWIU8zm0+GS1+QKBgQDyrIth6IUjlbuhVY8p\nnA4CGIvKx1WiuougwKlyOHRSxt0gIgXNpbRxBqwiFj1ADJ5o1iEgZ3g5TIxPL1NV\nLoH7TRsukUjDmLcVZQoaKu75bVzgaJqPDJOcxxWkfiA+J7AAdSmD83uhh8LjGeeV\n2DjtCigpSSBcRtOTMKBhnDtMNwKBgQC7Q8noCEXRyD58q+mvID5irij9ZWPsNQ6/\n5QZgEqFHLdFODgDpTz4dDGAgCCPIKjc8oF5ZhVeGN0QATXov5OuG2YXdOeGp85O6\nPAkdn2u0noD5qBLfMvJcBdBBES8DwxP952n7WYL67No21Jw8WTwonf8iUEJGOb36\naOOP8um9RQKBgQCCPoUYaVl7vdNURb1ukakbCt2MWevmSMTD5GONQCt+eekYY+pF\nc1gjCXe9W75H7/3dOn/RCneGGUV9AmNxZmKw47NhDOzGveIVg4MmhEB6cm3Uq4+4\nkwFutZMyE9duRJK7zCYaAcYq7dh1VuPqkoALCNaBQhQyMnk/mGubt+RDhQKBgQCD\n39EoHetNOH8IvOfr9AD67Trgd65OgW7JpDdBIN2CirmDBkmOA8fyHOz0ocbRBymv\nACBxWn2wfurca7NIVyWl6Tlj+Yb5cBbwZ6bjvYjTwWuCZOIlXHNgapelurwpIg/K\nFlWENB0RKArj4gXEWfMLh3hMacjCO5eV6JeYn7ALIQKBgFjzbBzwgwytQsD5epo8\n9+87iD1jL49PI87+qj5sj3Y4iWW5LPGfYSJMCm6tPdZMmDVfD2xuksqXWmXXPZb/\nKGNgF5HjGY0G+In55fKrbR2F9m1qwS96aMpWb1sgPZlSq5tU7MPyyjX/qGD1QM93\nN/jG5e0sV7Crod7Ek54TeH0h\n-----END PRIVATE KEY-----\n",
+  }),
+});
+
+export const adminDb = getFirestore(adminApp);
