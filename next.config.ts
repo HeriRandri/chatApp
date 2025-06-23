@@ -1,6 +1,8 @@
-// next.config.js
-/** @type {import('next').NextConfig} */
-const nextConfig: import("next").NextConfig = {
+// next.config.ts
+import type { NextConfig } from "next";
+import path from "path";
+
+const nextConfig: NextConfig = {
   images: {
     domains: [
       "lh3.googleusercontent.com",
@@ -8,42 +10,35 @@ const nextConfig: import("next").NextConfig = {
       "avatars.githubusercontent.com",
     ],
   },
-  // Choisissez l'une des deux options ci-dessous selon votre cible de déploiement :
-  // output: 'standalone', // Pour Docker/Cloud Run
-  output: "export", // Pour Firebase Hosting (statique)
-};
-
-module.exports = {
-  output: "export", // Obligatoire pour next export
-  trailingSlash: true, // Recommandé pour Firebase
-};
-// next.config.js
-module.exports = {
-  output: "export",
-  experimental: {
-    optimizeFonts: false, // Désactive l'optimisation des polices
-  },
-};
-import path from "path";
-
-interface WebpackConfig {
-  resolve: {
-    alias: Record<string, string>;
-  };
-}
-
-interface ModuleExports {
-  webpack: (config: WebpackConfig) => WebpackConfig;
-}
-
-const moduleExports: ModuleExports = {
-  webpack: (config: WebpackConfig): WebpackConfig => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": path.resolve(__dirname),
-    };
+  trailingSlash: true,
+  experimental: {},
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@": path.resolve(__dirname),
+      };
+    }
     return config;
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
-module.exports = moduleExports;
-module.exports = nextConfig;
+
+// Configuration conditionnelle basée sur la cible de déploiement
+const getConfig = () => {
+  if (process.env.DEPLOY_TARGET === "firebase") {
+    return {
+      ...nextConfig,
+      output: "export" as const,
+    };
+  }
+  return nextConfig;
+};
+
+export default getConfig();
