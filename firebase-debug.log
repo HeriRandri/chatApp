@@ -1,22 +1,37 @@
-[debug] [2025-06-16T11:43:57.037Z] ----------------------------------------------------------------------
-[debug] [2025-06-16T11:43:57.043Z] Command:       /usr/bin/node-22 /usr/local/bin/firebase login
-[debug] [2025-06-16T11:43:57.044Z] CLI Version:   14.7.0
-[debug] [2025-06-16T11:43:57.044Z] Platform:      linux
-[debug] [2025-06-16T11:43:57.044Z] Node Version:  v22.16.0
-[debug] [2025-06-16T11:43:57.045Z] Time:          Mon Jun 16 2025 04:43:57 GMT-0700 (heure d’été du Pacifique nord-américain)
-[debug] [2025-06-16T11:43:57.045Z] ----------------------------------------------------------------------
+[debug] [2025-06-19T12:50:06.049Z] ----------------------------------------------------------------------
+[debug] [2025-06-19T12:50:06.125Z] Command:       /usr/bin/node-22 /usr/local/bin/firebase deploy --only hosting --debug
+[debug] [2025-06-19T12:50:06.128Z] CLI Version:   14.7.0
+[debug] [2025-06-19T12:50:06.129Z] Platform:      linux
+[debug] [2025-06-19T12:50:06.130Z] Node Version:  v22.16.0
+[debug] [2025-06-19T12:50:06.131Z] Time:          Thu Jun 19 2025 05:50:06 GMT-0700 (heure d’été du Pacifique nord-américain)
+[debug] [2025-06-19T12:50:06.132Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2025-06-16T11:43:57.049Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
-[info] i  Firebase CLI integrates with Gemini in Firebase API to provide assistant features. Learn more about using Gemini in Firebase and how we train our models: https://firebase.google.com/docs/gemini-in-firebase/set-up-gemini#required-permissions 
-[debug] [2025-06-16T11:44:02.125Z] *** [apiv2] error from fetch(https://firebase-public.firebaseio.com/cli.json, {"headers":{},"method":"GET"}): FetchError: request to https://firebase-public.firebaseio.com/cli.json failed, reason: getaddrinfo ENOTFOUND firebase-public.firebaseio.com
-[warn] ⚠  Unable to fetch the CLI MOTD and remote config. This is not a fatal error, but may indicate an issue with your network connection. 
-[debug] [2025-06-16T11:44:02.126Z] Failed to fetch MOTD FirebaseError: Failed to make request to https://firebase-public.firebaseio.com/cli.json
+[debug] [2025-06-19T12:50:06.705Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-06-19T12:50:06.709Z] > authorizing via signed-in user (hrandri30@gmail.com)
+[debug] [2025-06-19T12:50:06.710Z] [iam] checking project chattapp-475bc for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-06-19T12:50:06.714Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:06.715Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:06.718Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/chattapp-475bc:testIamPermissions [none]
+[debug] [2025-06-19T12:50:06.719Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/chattapp-475bc:testIamPermissions x-goog-quota-user=projects/chattapp-475bc
+[debug] [2025-06-19T12:50:06.720Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/chattapp-475bc:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-06-19T12:50:11.119Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/chattapp-475bc:testIamPermissions 200
+[debug] [2025-06-19T12:50:11.121Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/chattapp-475bc:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-06-19T12:50:11.123Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:11.123Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:11.124Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/chattapp-475bc [none]
+[debug] [2025-06-19T12:50:11.975Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/chattapp-475bc 200
+[debug] [2025-06-19T12:50:11.975Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/chattapp-475bc {"projectId":"chattapp-475bc","projectNumber":"814755818371","displayName":"chattApp","name":"projects/chattapp-475bc","resources":{"hostingSite":"chattapp-475bc"},"state":"ACTIVE","etag":"1_1a2b6e2f-c68f-4916-aed5-c739c783e702"}
+[debug] [2025-06-19T12:50:11.979Z] Specified "public" directory "out" does not exist; Deploy to Hosting site "chattapp-475bc" may fail or be empty.
 [info] 
-[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you. 
+[info] === Deploying to 'chattapp-475bc'...
 [info] 
-[info] i  To change your the preference at any time, run `firebase logout` and `firebase login` again. 
-[info] 
-[info] Visit this URL on this device to log in:
-[info] https://accounts.google.com/o/oauth2/auth?client_id=563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com&scope=email%20openid%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloudplatformprojects.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Ffirebase%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&response_type=code&state=883720877&redirect_uri=http%3A%2F%2Flocalhost%3A9005
-[info] 
-[info] Waiting for authentication...
+[info] i  deploying hosting 
+[debug] [2025-06-19T12:50:12.007Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:12.007Z] Checked if tokens are valid: true, expires at: 1750338679007
+[debug] [2025-06-19T12:50:12.008Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/chattapp-475bc/versions [none]
+[debug] [2025-06-19T12:50:12.008Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/chattapp-475bc/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2025-06-19T12:50:16.382Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/chattapp-475bc/versions 200
+[debug] [2025-06-19T12:50:16.383Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/chattapp-475bc/versions {"name":"projects/814755818371/sites/chattapp-475bc/versions/1f280db117e374fd","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[chattapp-475bc]: beginning deploy... 
+[error] 
+[error] Error: Directory 'out' for Hosting does not exist.

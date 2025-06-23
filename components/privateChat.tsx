@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
@@ -36,28 +37,66 @@ export default function PrivateChat({ recipientId }: { recipientId: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+  };
+
+  const showChatNotification = (title: string, body: string, icon?: string) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(title, {
+        body,
+        icon: icon || "/chat-icon.png",
+      });
+    }
+  };
 
   const getChatId = useCallback(() => {
     const currentUserId = auth.currentUser?.uid;
     return [currentUserId, recipientId].sort().join("_");
   }, [recipientId]);
 
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    const chatId = getChatId();
+    const q = query(
+      collection(db, `chats/${chatId}/messages`),
+      orderBy("createdAt")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newMessages = snapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Message)
+      );
+      const latest = newMessages[newMessages.length - 1];
+      const last = messages[messages.length - 1];
+      const isNew = latest?.id !== last?.id;
+      setMessages(newMessages);
+      scrollToBottom();
+
+      if (
+        isNew &&
+        latest?.senderId !== auth.currentUser?.uid &&
+        Notification.permission === "granted"
+      ) {
+        showChatNotification("Nouveau message 🔔", latest.text || "📷 Image");
+      }
+    });
+    return () => unsubscribe();
+  }, [getChatId]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() && !imageFile) return;
-
     setIsUploading(true);
     const chatId = getChatId();
     let imageUrl = null;
@@ -88,28 +127,23 @@ export default function PrivateChat({ recipientId }: { recipientId: string }) {
       setNewMessage("");
       setImageFile(null);
       setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Erreur lors de l'envoi :", error);
     } finally {
       setIsUploading(false);
     }
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const storage = getStorage();
-      const storageRef = ref(
-        storage,
-        `chat-images/${auth.currentUser?.uid}/${Date.now()}_${file.name}`
-      );
-
-      const metadata = { contentType: file.type };
-      const snapshot = await uploadBytes(storageRef, file, metadata);
-      return await getDownloadURL(snapshot.ref);
-    } catch (error) {
-      console.error("Erreur d'upload:", error);
-      throw error;
-    }
+    const storage = getStorage();
+    const storageRef = ref(
+      storage,
+      `chat-images/${auth.currentUser?.uid}/${Date.now()}_${file.name}`
+    );
+    const metadata = { contentType: file.type };
+    const snapshot = await uploadBytes(storageRef, file, metadata);
+    return await getDownloadURL(snapshot.ref);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,192 +154,180 @@ export default function PrivateChat({ recipientId }: { recipientId: string }) {
       alert("L'image ne doit pas dépasser 5MB");
       return;
     }
-
     if (!file.type.match("image.*")) {
-      alert("Veuillez sélectionner une image valide");
+      alert("Veuillez sélectionner une image");
       return;
     }
 
     setImageFile(file);
-
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  useEffect(() => {
-    const chatId = getChatId();
-    const q = query(
-      collection(db, `chats/${chatId}/messages`),
-      orderBy("createdAt")
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(
-        snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Message))
-      );
-    });
-    return () => unsubscribe();
-  }, [recipientId, getChatId]);
-
   const handleDelete = async (messageId: string) => {
-    const chatId = getChatId();
     const confirm = window.confirm("Supprimer ce message ?");
     if (!confirm) return;
-
     try {
-      await deleteDoc(doc(db, `chats/${chatId}/messages/${messageId}`));
-      console.log("Message supprimé !");
+      await deleteDoc(doc(db, `chats/${getChatId()}/messages/${messageId}`));
     } catch (error) {
-      console.error("Erreur lors de la suppression :", error);
+      console.error("Erreur suppression :", error);
     }
   };
 
   return (
-    <div className="flex flex-col h-full  rounded-lg overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-200">
+    <div className="flex flex-col h-full bg-black text-white  overflow-hidden">
+      {/* Zone de messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`mb-4 flex ${
+            className={`flex ${
               msg.senderId === auth.currentUser?.uid
                 ? "justify-end"
                 : "justify-start"
             } group`}
           >
-            <div
-              className={`relative max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                msg.senderId === auth.currentUser?.uid
-                  ? "bg-gray-600 text-white rounded-br-none"
-                  : "bg-green-300 text-black rounded-bl-none"
-              }`}
-            >
-              {msg.text && <p className="break-words pr-8">{msg.text}</p>}
-              {msg.imageUrl && (
-                <div className="mt-2">
-                  <Image
-                    src={msg.imageUrl}
-                    alt="Image envoyée"
-                    width={0}
-                    height={0}
-                    sizes="100vw"
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      maxHeight: "300px",
-                      objectFit: "cover",
-                    }}
-                    className="rounded-lg"
-                  />
-                </div>
-              )}
-              <div className="text-xs opacity-70 mt-1">
-                {msg.createdAt?.toDate().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+            <div className="flex flex-col items-start">
+              <div
+                className={`relative max-w-xs md:max-w-md px-4 py-2 rounded-xl shadow ${
+                  msg.senderId === auth.currentUser?.uid
+                    ? "text-black bg-white rounded-br-none"
+                    : "bg-gray-900 text-white rounded-bl-none"
+                }`}
+              >
+                {msg.text && <p className="break-words pr-6">{msg.text}</p>}
+                {msg.imageUrl && (
+                  <div className="mt-2">
+                    <Image
+                      src={msg.imageUrl}
+                      alt="Image envoyée"
+                      width={0}
+                      height={0}
+                      sizes="100vw"
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        maxHeight: 300,
+                        objectFit: "cover",
+                      }}
+                      className="rounded-lg"
+                    />
+                  </div>
+                )}
               </div>
-              {msg.senderId === auth.currentUser?.uid && (
-                <div className="absolute top-1 right-1 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => alert("Fonction modification à venir")}
-                    className="text-white/80 hover:text-white"
-                    title="Modifier"
-                  >
-                    <FiEdit2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(msg.id)}
-                    className="text-white/80 hover:text-red-400"
-                    title="Supprimer"
-                  >
-                    <FiTrash size={16} />
-                  </button>
+              <div className="flex items-center gap-2 relative justify-between text-white">
+                {msg.senderId === auth.currentUser?.uid && (
+                  <div className="absolute top-1 left-12 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      title="Modifier"
+                      onClick={() => alert("Édition à venir")}
+                      className="text-white/80 hover:text-black/80"
+                    >
+                      <FiEdit2 size={16} />
+                    </button>
+                    <button
+                      title="Supprimer"
+                      onClick={() => handleDelete(msg.id)}
+                      className="text-white/80 hover:text-red-400"
+                    >
+                      <FiTrash size={16} />
+                    </button>
+                  </div>
+                )}
+                <div className="text-xs mt-1 opacity-70 ">
+                  {msg.createdAt?.toDate().toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         ))}
-        <div ref={bottomRef} />
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Image preview */}
       {imagePreview && (
-        <div className="px-4 py-2 bg-gray-50 border-t relative">
-          <div className="relative inline-block">
-            <Image
-              src={imagePreview}
-              alt="Preview"
-              width={120}
-              height={120}
-              className="rounded-lg"
-            />
-            <button
-              onClick={() => {
-                setImagePreview(null);
-                setImageFile(null);
-                if (fileInputRef.current) fileInputRef.current.value = "";
-              }}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-            >
-              ×
-            </button>
-          </div>
+        <div className="bg-gray-800 border-t border-gray-600 p-2 flex items-center gap-4">
+          <Image
+            src={imagePreview}
+            alt="Preview"
+            width={100}
+            height={100}
+            className="rounded-md"
+          />
+          <button
+            onClick={() => {
+              setImagePreview(null);
+              setImageFile(null);
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }}
+            className="text-red-500 hover:text-red-700"
+          >
+            Supprimer
+          </button>
         </div>
       )}
 
-      <form onSubmit={sendMessage} className="p-4 bg-gray-50 border-t">
-        <div className="flex items-center gap-2 relative">
-          <button
-            type="button"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-2 text-gray-500 hover:text-gray-700"
-          >
-            <FiSmile size={20} />
-          </button>
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-14 left-0 z-10">
-              <Picker
-                data={data}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  setNewMessage((prev) => prev + emoji.native);
-                  setShowEmojiPicker(false);
-                }}
-                onClickOutside={() => setShowEmojiPicker(false)}
-              />
-            </div>
-          )}
+      {/* Barre de message */}
+      <form
+        onSubmit={sendMessage}
+        className="bg-gray-800 border-t border-gray-600 p-4"
+      >
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="text-gray-400 hover:text-white"
+            >
+              <FiSmile size={22} />
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 left-0 z-50">
+                <Picker
+                  data={data}
+                  onEmojiSelect={(emoji: { native: string }) => {
+                    setNewMessage((prev) => prev + emoji.native);
+                    setShowEmojiPicker(false);
+                  }}
+                  theme="dark"
+                />
+              </div>
+            )}
+          </div>
 
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             className="hidden"
-            ref={fileInputRef}
             id="file-upload"
           />
           <label
             htmlFor="file-upload"
-            className="p-2 text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-gray-400 hover:text-white cursor-pointer"
           >
-            <FiImage size={20} />
+            <FiImage size={22} />
           </label>
 
           <input
-            type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            className="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            placeholder="Écrivez un message..."
+            placeholder="Écrire un message..."
+            className="flex-1 px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none"
           />
 
           <button
             type="submit"
             disabled={isUploading || (!newMessage.trim() && !imageFile)}
-            className={`p-3 rounded-full ${
+            className={`p-2 rounded-full ${
               isUploading || (!newMessage.trim() && !imageFile)
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             <FiSend size={20} />

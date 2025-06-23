@@ -132,7 +132,7 @@ export default function UserSuggestions() {
               className="rounded-full"
             />
             <div>
-              <p className="font-medium">{user.displayName}</p>
+              <p className="font-medium text-green-300">{user.displayName}</p>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
           </div>

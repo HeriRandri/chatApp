@@ -13,10 +13,15 @@ const nextConfig: import("next").NextConfig = {
   output: "export", // Pour Firebase Hosting (statique)
 };
 
+module.exports = {
+  output: "export", // Obligatoire pour next export
+  trailingSlash: true, // Recommandé pour Firebase
+};
 // next.config.js
 module.exports = {
+  output: "export",
   experimental: {
-    fontLoaders: [{ loader: "@next/font/google", options: { timeout: 30000 } }],
+    optimizeFonts: false, // Désactive l'optimisation des polices
   },
 };
 import path from "path";

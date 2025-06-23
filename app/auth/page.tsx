@@ -1,10 +1,13 @@
 "use client";
+
 import {
   auth,
-  registerUser, // ta fonction perso
+  registerUser, // fonction Firestore si utilisée
 } from "@/app/firebase/clientApp";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
+// import Image from "next/image";
+// import chatLogo from "@/public/chat.jpg"; // à adapter selon ton chemin réel
 
 export default function AuthEntryPoint() {
   const router = useRouter();
@@ -13,7 +16,7 @@ export default function AuthEntryPoint() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      await registerUser(result.user); // si tu enregistres en Firestore
+      await registerUser(result.user);
       router.push("/chats");
     } catch (err) {
       console.error("Erreur Google :", err);
@@ -21,38 +24,47 @@ export default function AuthEntryPoint() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-md rounded-lg p-8 max-w-sm w-full text-center">
-        <h1 className="text-2xl font-bold mb-6">
-          Bienvenue sur <span className="text-blue-600">ChattApp</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-950 to-gray-900 text-white p-6">
+      <div className="bg-white dark:bg-gray-900 text-gray-800 dark:text-white shadow-lg rounded-xl p-10 w-full max-w-md flex flex-col items-center gap-6">
+        {/* Logo */}
+        <img
+          src="/chat.jpg"
+          alt="Chat App Logo"
+          width={80}
+          height={80}
+          className="dark:invert rounded-full shadow-lg mb-4"
+        />
+
+        <h1 className="text-3xl font-bold text-center">
+          Bienvenue sur <span className="text-blue-500">ChattApp</span>
         </h1>
 
-        {/* Bouton Google */}
+        {/* Google Sign In */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-medium"
+          className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded font-semibold"
         >
           Se connecter avec Google
         </button>
 
         {/* Séparateur */}
-        <div className="my-6 flex items-center">
-          <div className="flex-grow border-t border-gray-300" />
-          <span className="mx-4 text-gray-400">ou</span>
-          <div className="flex-grow border-t border-gray-300" />
+        <div className="flex items-center w-full gap-4">
+          <div className="flex-grow border-t border-gray-300 dark:border-gray-600" />
+          <span className="text-sm text-gray-400">ou</span>
+          <div className="flex-grow border-t border-gray-300 dark:border-gray-600" />
         </div>
 
-        {/* Liens vers login/register */}
-        <div className="space-y-3">
+        {/* Autres options */}
+        <div className="w-full space-y-3">
           <button
             onClick={() => router.push("/login")}
-            className="w-full border border-blue-500 text-blue-500 hover:bg-blue-50 py-2 rounded"
+            className="w-full border border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 py-2 rounded"
           >
             Connexion par Email
           </button>
           <button
             onClick={() => router.push("/register")}
-            className="w-full border border-green-600 text-green-600 hover:bg-green-50 py-2 rounded"
+            className="w-full border border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900 py-2 rounded"
           >
             Créer un compte
           </button>
