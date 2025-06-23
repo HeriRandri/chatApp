@@ -2,21 +2,32 @@
 
 import {
   auth,
-  registerUser, // fonction Firestore si utilisée
+  providerGoogle,
+  registerUser, // fonction Firestore bien typée
 } from "@/app/firebase/clientApp";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
-// import Image from "next/image";
-// import chatLogo from "@/public/chat.jpg"; // à adapter selon ton chemin réel
 
 export default function AuthEntryPoint() {
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      await registerUser(result.user);
+      // Connexion avec Google via le provider déjà exporté
+      const result = await signInWithPopup(auth, providerGoogle);
+
+      // Préparation des données utilisateur à enregistrer dans Firestore
+      const userData = {
+        uid: result.user.uid,
+        displayName: result.user.displayName,
+        email: result.user.email,
+        photoURL: result.user.photoURL,
+      };
+
+      // Enregistrement dans Firestore
+      await registerUser(userData);
+
+      // Redirection vers la page principale
       router.push("/chats");
     } catch (err) {
       console.error("Erreur Google :", err);
@@ -39,7 +50,7 @@ export default function AuthEntryPoint() {
           Bienvenue sur <span className="text-blue-500">ChattApp</span>
         </h1>
 
-        {/* Google Sign In */}
+        {/* Bouton Google */}
         <button
           onClick={handleGoogleLogin}
           className="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded font-semibold"
@@ -63,7 +74,7 @@ export default function AuthEntryPoint() {
             Connexion par Email
           </button>
           <button
-            onClick={() => router.push("/register")}
+            onClick={() => router.push("/auth")}
             className="w-full border border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900 py-2 rounded"
           >
             Créer un compte
