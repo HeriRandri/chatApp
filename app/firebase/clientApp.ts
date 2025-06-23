@@ -6,15 +6,18 @@ import { getAuth, GithubAuthProvider, GoogleAuthProvider } from "firebase/auth";
 import { setDoc, doc } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
+// clientApp.ts
 const firebaseConfig = {
   apiKey: "AIzaSyBLKj8QnapiBrb3XKb3NKbTEo67IyD5xFw",
-  authDomain: "chattapp-475bc.firebaseapp.com",
+  authDomain:
+    window.location.hostname === "localhost"
+      ? "localhost"
+      : "chattapp-475bc.firebaseapp.com", // Domaine principal Firebase
   projectId: "chattapp-475bc",
-  storageBucket: "chattapp-475bc.firebasestorage.app",
+  storageBucket: "chattapp-475bc.appspot.com", // Modifié pour utiliser le bucket par défaut
   messagingSenderId: "814755818371",
   appId: "1:814755818371:web:703072cd7409c3415764b6",
 };
-
 // Ajoutez cette fonction
 export interface FirebaseUser {
   uid: string;

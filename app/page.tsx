@@ -29,33 +29,6 @@ export default function Home() {
           Se connecter / S inscrire
         </Link>
       </main>
-
-      <footer className="flex gap-6 text-sm opacity-80">
-        <a
-          href="https://nextjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:underline"
-        >
-          Next.js
-        </a>
-        <a
-          href="https://vercel.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:underline"
-        >
-          Vercel
-        </a>
-        <a
-          href="https://firebase.google.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:underline"
-        >
-          Firebase
-        </a>
-      </footer>
     </div>
   );
 }
