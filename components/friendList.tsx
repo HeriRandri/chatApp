@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { db } from "@/app/firebase/clientApp";
 import {
   doc,
@@ -10,27 +10,25 @@ import {
   getDocs,
   query,
   where,
+  writeBatch,
+  serverTimestamp,
 } from "firebase/firestore";
+import { FiMoreVertical, FiSearch, FiUser, FiX, FiCheck } from "react-icons/fi";
+import { debounce } from "lodash";
+import toast from "react-hot-toast";
 
-type FriendEntry = { uid: string; status: string };
+type FriendEntry = { uid: string; status: string; updatedAt?: Date };
 
-function removeDuplicates(arr: FriendEntry[]) {
-  const seen = new Set();
-  return arr.filter((item) => {
-    if (seen.has(item.uid)) return false;
-    seen.add(item.uid);
-    return true;
-  });
-}
-
-type Friend = {
+interface Friend {
   uid: string;
   displayName?: string;
   email?: string;
   photoURL?: string;
   isOnline?: boolean;
   lastSeen?: Date;
-};
+  unreadCount?: number;
+  status?: string;
+}
 
 export default function FriendList({
   currentUserId,
@@ -40,178 +38,407 @@ export default function FriendList({
   onSelect: (userId: string) => void;
 }) {
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<Friend[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState<"friends" | "blocked">(
+    "friends"
+  );
 
-  useEffect(() => {
+  // Mémoized filtered friends
+  const filteredFriends = useMemo(() => {
+    if (!searchTerm.trim()) return friends;
+    return friends.filter(
+      (user) =>
+        user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [friends, searchTerm]);
+
+  // Optimized search with debounce
+  const handleSearch = useCallback(
+    debounce((term: string) => {
+      setSearchTerm(term);
+    }, 300),
+    []
+  );
+
+  // Fetch friends data with optimized queries
+  const fetchFriendsData = useCallback(async (currentUserId: string) => {
     if (!currentUserId) return;
 
-    // Détacher les anciens listeners
+    setLoading(true);
     const unsubscribes: (() => void)[] = [];
 
-    const unsubscribeFriends = onSnapshot(
-      doc(db, "friends", currentUserId),
-      async (snapshot) => {
-        const data = snapshot.data();
-        if (!data || !data.list) {
-          setFriends([]);
-          setLoading(false);
-          return;
-        }
-
-        const accepted = removeDuplicates(
-          data.list.filter((entry: FriendEntry) => entry.status === "accepted")
-        );
-
-        const friendsData = await Promise.all(
-          accepted.map(async (entry: FriendEntry) => {
-            // Écouter les changements de statut pour chaque ami
-            const unsubscribe = onSnapshot(
-              doc(db, "users", entry.uid),
-              (userDoc) => {
-                const userData = userDoc.data();
-                setFriends((prev) =>
-                  prev.map((friend) =>
-                    friend.uid === entry.uid
-                      ? {
-                          ...friend,
-                          displayName: userData?.displayName,
-                          email: userData?.email,
-                          photoURL: userData?.photoURL,
-                          isOnline: userData?.isOnline,
-                          lastSeen: userData?.lastSeen?.toDate(),
-                        }
-                      : friend
-                  )
-                );
-              }
-            );
-
-            unsubscribes.push(unsubscribe);
-
-            const userDoc = await getDoc(doc(db, "users", entry.uid));
-            const userData = userDoc.data();
-            return {
-              uid: entry.uid,
-              displayName: userData?.displayName,
-              email: userData?.email,
-              photoURL: userData?.photoURL,
-              isOnline: userData?.isOnline,
-              lastSeen: userData?.lastSeen?.toDate(),
-            };
-          })
-        );
-
-        setFriends(friendsData);
-        setLoading(false);
+    try {
+      const friendsDoc = await getDoc(doc(db, "friends", currentUserId));
+      if (!friendsDoc.exists()) {
+        setFriends([]);
+        setBlockedUsers([]);
+        return;
       }
-    );
 
-    unsubscribes.push(unsubscribeFriends);
-
-    return () => {
-      unsubscribes.forEach((unsub) => unsub());
-    };
-  }, [currentUserId]);
-
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setSearchResults([]);
-      return;
-    }
-
-    const delayDebounce = setTimeout(() => {
-      const fetchUsers = async () => {
-        try {
-          const q = query(
-            collection(db, "users"),
-            where("displayName", ">=", searchTerm),
-            where("displayName", "<=", searchTerm + "\uf8ff")
-          );
-          const snapshot = await getDocs(q);
-          const results = snapshot.docs
-            .map((doc) => ({
-              ...(doc.data() as Friend),
-              lastSeen: doc.data().lastSeen?.toDate(),
-            }))
-            .filter((user) => user.uid !== currentUserId);
-          setSearchResults(results);
-        } catch (error) {
-          console.error("Error searching users:", error);
-        }
-      };
-      fetchUsers();
-    }, 300);
-
-    return () => clearTimeout(delayDebounce);
-  }, [searchTerm, currentUserId]);
-
-  const displayUsers = searchTerm ? searchResults : friends;
-
-  const getOnlineStatus = (user: Friend) => {
-    if (user.isOnline) return "En ligne";
-    if (user.lastSeen) {
-      const now = new Date();
-      const lastSeen = user.lastSeen;
-      const diffMinutes = Math.floor(
-        (now.getTime() - lastSeen.getTime()) / (1000 * 60)
+      const friendsData = friendsDoc.data().list || [];
+      const accepted = friendsData.filter(
+        (f: FriendEntry) => f.status === "accepted"
+      );
+      const blocked = friendsData.filter(
+        (f: FriendEntry) => f.status === "blocked"
       );
 
-      if (diffMinutes < 5) return "En ligne récemment";
-      if (diffMinutes < 60) return `Hors ligne depuis ${diffMinutes} min`;
-      if (diffMinutes < 24 * 60)
-        return `Hors ligne depuis ${Math.floor(diffMinutes / 60)} h`;
-      return `Hors ligne depuis ${Math.floor(diffMinutes / (60 * 24))} j`;
+      // Process blocked users
+      const blockedUsersData = await Promise.all(
+        blocked.map(async (entry: FriendEntry) => {
+          const userDoc = await getDoc(doc(db, "users", entry.uid));
+          return {
+            uid: entry.uid,
+            status: "blocked",
+            ...userDoc.data(),
+            lastSeen: userDoc.data()?.lastSeen?.toDate(),
+          };
+        })
+      );
+      setBlockedUsers(blockedUsersData);
+
+      // Process accepted friends with real-time updates
+      const friendsWithData = await Promise.all(
+        accepted.map(async (entry: FriendEntry) => {
+          const userRef = doc(db, "users", entry.uid);
+          const userDoc = await getDoc(userRef);
+          const userData = userDoc.data();
+
+          // Get unread count
+          const chatId = [currentUserId, entry.uid].sort().join("_");
+          const unreadQuery = query(
+            collection(db, `chats/${chatId}/messages`),
+            where("senderId", "==", entry.uid),
+            where("readAt", "==", null)
+          );
+          const unreadSnapshot = await getDocs(unreadQuery);
+
+          // Subscribe to user updates
+          const unsubscribe = onSnapshot(userRef, (doc) => {
+            const updatedData = doc.data();
+            setFriends((prev) =>
+              prev.map((f) =>
+                f.uid === entry.uid
+                  ? {
+                      ...f,
+                      ...updatedData,
+                      lastSeen: updatedData?.lastSeen?.toDate(),
+                    }
+                  : f
+              )
+            );
+          });
+          unsubscribes.push(unsubscribe);
+
+          return {
+            uid: entry.uid,
+            status: "accepted",
+            ...userData,
+            lastSeen: userData?.lastSeen?.toDate(),
+            unreadCount: unreadSnapshot.size,
+          };
+        })
+      );
+
+      setFriends(friendsWithData);
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+      toast.error("Failed to load friends list");
+    } finally {
+      setLoading(false);
     }
-    return "Hors ligne";
+
+    return () => unsubscribes.forEach((unsub) => unsub());
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    let unsubscribe: (() => void) | undefined;
+
+    fetchFriendsData(currentUserId).then((unsub) => {
+      if (isMounted && typeof unsub === "function") {
+        unsubscribe = unsub;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUserId, fetchFriendsData]);
+
+  // Friend actions with batch writes
+  const updateFriendStatus = useCallback(
+    async (targetUid: string, status: "accepted" | "blocked" | "removed") => {
+      if (!currentUserId) return;
+
+      try {
+        const batch = writeBatch(db);
+        const friendsRef = doc(db, "friends", currentUserId);
+        const friendDoc = await getDoc(friendsRef);
+
+        let updatedList = friendDoc.exists() ? friendDoc.data().list || [] : [];
+
+        if (status === "removed") {
+          updatedList = updatedList.filter(
+            (f: FriendEntry) => f.uid !== targetUid
+          );
+        } else {
+          const existingIndex = updatedList.findIndex(
+            (f: FriendEntry) => f.uid === targetUid
+          );
+          if (existingIndex >= 0) {
+            updatedList[existingIndex] = {
+              ...updatedList[existingIndex],
+              status,
+              updatedAt: serverTimestamp(),
+            };
+          } else {
+            updatedList.push({
+              uid: targetUid,
+              status,
+              updatedAt: serverTimestamp(),
+            });
+          }
+        }
+
+        batch.set(friendsRef, { list: updatedList });
+        await batch.commit();
+
+        toast.success(
+          status === "blocked"
+            ? "User blocked successfully"
+            : status === "accepted"
+            ? "User unblocked"
+            : "Friend removed"
+        );
+      } catch (error) {
+        console.error("Error updating friend status:", error);
+        toast.error("Failed to update friend status");
+      }
+    },
+    [currentUserId]
+  );
+
+  const handleBlockFriend = (targetUser: Friend) => {
+    updateFriendStatus(targetUser.uid, "blocked");
+    setMenuOpen(null);
   };
 
+  const handleRemoveFriend = (targetUser: Friend) => {
+    updateFriendStatus(targetUser.uid, "removed");
+    setMenuOpen(null);
+  };
+
+  const handleUnblock = (targetUser: Friend) => {
+    updateFriendStatus(targetUser.uid, "accepted");
+  };
+
+  // Online status calculation
+  const getOnlineStatus = useCallback((user: Friend) => {
+    if (user.isOnline)
+      return { text: "En ligne", icon: "🟢", color: "text-green-500" };
+    if (!user.lastSeen)
+      return { text: "Hors ligne", icon: "⚪", color: "text-gray-500" };
+
+    const now = new Date();
+    const diffMinutes = Math.floor(
+      (now.getTime() - user.lastSeen.getTime()) / 60000
+    );
+
+    if (diffMinutes < 1)
+      return { text: "En ligne", icon: "🟢", color: "text-green-500" };
+    if (diffMinutes < 60)
+      return {
+        text: `${diffMinutes} min`,
+        icon: "🕒",
+        color: "text-yellow-500",
+      };
+    if (diffMinutes < 1440)
+      return {
+        text: `${Math.floor(diffMinutes / 60)} h`,
+        icon: "🕒",
+        color: "text-yellow-500",
+      };
+    return {
+      text: `${Math.floor(diffMinutes / 1440)} j`,
+      icon: "📆",
+      color: "text-gray-400",
+    };
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setMenuOpen(null);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   return (
-    <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold mb-2">Amis</h2>
+    <div className="p-4 bg-gray-900 text-white rounded-lg shadow-md h-full flex flex-col">
+      <h2 className="text-2xl font-bold mb-4">Contacts</h2>
 
-      <input
-        type="text"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Rechercher un ami..."
-        className="w-full p-2 rounded border text-black bg-white"
-      />
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <FiSearch className="absolute left-3 top-3 text-gray-400" />
+        <input
+          type="text"
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Rechercher un contact..."
+          className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-700 bg-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
-      {loading && !searchTerm ? (
-        <p className="text-gray-500">Chargement des amis...</p>
-      ) : displayUsers.length > 0 ? (
-        displayUsers.map((user) => (
-          <div
-            key={user.uid}
-            className="flex items-center gap-3 p-3  shadow rounded cursor-pointer hover:bg-gray-100 hover:text-black"
-            onClick={() => onSelect(user.uid)}
-          >
-            <img
-              src={user.photoURL || "/default-avatar.png"}
-              alt={user.displayName || "Avatar"}
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-            <div className="flex-1">
-              <p className="font-medium">{user.displayName}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-              <p className="text-xs text-gray-400">{getOnlineStatus(user)}</p>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-700 mb-4">
+        <button
+          className={`flex-1 py-2 font-medium ${
+            selectedTab === "friends"
+              ? "text-blue-400 border-b-2 border-blue-400"
+              : "text-gray-400 hover:text-white"
+          }`}
+          onClick={() => setSelectedTab("friends")}
+        >
+          Amis ({friends.length})
+        </button>
+        <button
+          className={`flex-1 py-2 font-medium ${
+            selectedTab === "blocked"
+              ? "text-red-400 border-b-2 border-red-400"
+              : "text-gray-400 hover:text-white"
+          }`}
+          onClick={() => setSelectedTab("blocked")}
+        >
+          Bloqués ({blockedUsers.length})
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : selectedTab === "friends" ? (
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {filteredFriends.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {searchTerm ? "Aucun ami trouvé" : "Aucun ami ajouté"}
             </div>
-            <span
-              className={`w-3 h-3 rounded-full ${
-                user.isOnline ? "bg-green-500" : "bg-gray-400"
-              }`}
-              title={getOnlineStatus(user)}
-            ></span>
-          </div>
-        ))
+          ) : (
+            filteredFriends.map((user) => (
+              <div
+                key={user.uid}
+                className="relative flex items-center p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition cursor-pointer group"
+                onClick={() => onSelect(user.uid)}
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="relative">
+                    <img
+                      src={user.photoURL || "/default-avatar.png"}
+                      alt={user.displayName || "Avatar"}
+                      className="w-10 h-10 rounded-full border-2 border-gray-600 object-cover"
+                    />
+                    <span
+                      className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-gray-800 ${
+                        user.isOnline ? "bg-green-500" : "bg-gray-500"
+                      }`}
+                    ></span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">
+                      {user.displayName || user.email}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs">
+                      <span className={getOnlineStatus(user).color}>
+                        {getOnlineStatus(user).icon}{" "}
+                        {getOnlineStatus(user).text}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {user.unreadCount && user.unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {user.unreadCount}
+                    </span>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(menuOpen === user.uid ? null : user.uid);
+                    }}
+                    className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-600"
+                  >
+                    <FiMoreVertical />
+                  </button>
+                </div>
+
+                {menuOpen === user.uid && (
+                  <div className="absolute right-2 top-12 bg-gray-700 rounded-md shadow-xl z-10 overflow-hidden">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(user.uid);
+                        setMenuOpen(null);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-600 w-full text-left"
+                    >
+                      <FiUser size={14} /> Voir profil
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBlockFriend(user);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-600 w-full text-left"
+                    >
+                      <FiX size={14} /> Bloquer
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       ) : (
-        <p className="text-gray-500">
-          {searchTerm ? "Aucun résultat trouvé." : "Aucun ami à afficher."}
-        </p>
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {blockedUsers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Aucun utilisateur bloqué
+            </div>
+          ) : (
+            blockedUsers.map((user) => (
+              <div
+                key={user.uid}
+                className="flex items-center justify-between p-3 bg-gray-800 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.photoURL || "/default-avatar.png"}
+                    alt={user.displayName}
+                    className="w-10 h-10 rounded-full border-2 border-gray-600"
+                  />
+                  <div>
+                    <p className="font-medium">
+                      {user.displayName || user.email}
+                    </p>
+                    <p className="text-xs text-gray-400">Bloqué</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleUnblock(user)}
+                  className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                >
+                  <FiCheck size={14} /> Débloquer
+                </button>
+              </div>
+            ))
+          )}
+        </div>
       )}
     </div>
   );
